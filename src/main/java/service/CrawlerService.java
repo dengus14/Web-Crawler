@@ -38,6 +38,7 @@ public class CrawlerService {
         Document doc = Jsoup.parse(html, baseUrl);
         pageResult.setTitle(doc.title());
         pageResult.setMetaDescription(doc.select("meta[name=description]").attr("content"));
+        pageResult.setText(doc.text());
         if (doc.select("h1").size() > 0){
             pageResult.setHasH1(true);
         }

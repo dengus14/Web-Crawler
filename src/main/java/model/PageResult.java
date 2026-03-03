@@ -15,4 +15,5 @@ public class PageResult {
     private List<String> outboundLinks;
     private List<String> brokenLinks;
     private String contentFingerprint;
+    private String text;
 }
