@@ -2,7 +2,10 @@ package controller;
 
 
 import model.CrawlJob;
+import model.ResponseClass;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import repository.CrawlerRepository;
@@ -28,7 +31,15 @@ public class CrawlerController {
         CrawlJob savedJob = crawlerRepository.save(crawlJob);
         crawlerService.crawl(savedJob);
         return savedJob.getId();
+    }
+    @GetMapping("/api/crawl/{id}/status")
+    public ResponseClass getCrawlStatus(@PathVariable String id) {
+        CrawlJob crawlJob = crawlerRepository.findById(id).orElse(null);
 
+        ResponseClass responseClass = new ResponseClass();
+        responseClass.setStatus(crawlJob.getStatus());
+        responseClass.setPagesCrawled(crawlJob.getPagesCrawled());
+        return responseClass;
     }
 
 
