@@ -1,11 +1,17 @@
 package model;
 
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
+@Entity
+@Table(name = "page_results")
 public class PageResult {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
     private String url;
     private int statusCode;
     private long responseTimeMs;
