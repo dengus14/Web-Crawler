@@ -18,8 +18,14 @@ public class PageResult {
     private String title;
     private String metaDescription;
     private boolean hasH1 = false;
+    @ElementCollection
     private List<String> outboundLinks;
+    @ElementCollection
     private List<String> brokenLinks;
     private String contentFingerprint;
     private String text;
+
+    @ManyToOne
+    @JoinColumn(name = "crawl_job_id")
+    private CrawlJob crawlJob;
 }

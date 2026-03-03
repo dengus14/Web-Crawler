@@ -2,10 +2,13 @@ package service;
 
 import model.CrawlJob;
 import model.PageResult;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+@Service
 public class AnalysisService {
 
     public List<PageResult> getBrokenLinks(CrawlJob job){

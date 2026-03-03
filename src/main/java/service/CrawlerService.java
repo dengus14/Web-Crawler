@@ -5,6 +5,8 @@ import model.CrawlJob;
 import model.PageResult;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
@@ -18,6 +20,7 @@ import java.util.concurrent.*;
 import static utils.Status.RUNNING;
 
 @Slf4j
+@Service
 public class CrawlerService {
     HttpClient client = HttpClient.newHttpClient();
 
@@ -58,7 +61,7 @@ public class CrawlerService {
 
         return host.equals(host2);
     }
-
+    @Async
     public void crawl(CrawlJob crawlJob) throws IOException, InterruptedException, URISyntaxException {
         Queue<String> queue = new ConcurrentLinkedQueue<>();
         ConcurrentHashMap<String, Boolean> visited = new ConcurrentHashMap<>();
@@ -86,6 +89,7 @@ public class CrawlerService {
                     pageResult.setStatusCode(response.statusCode());
                     pageResult.setResponseTimeMs(duration);
                     pageResult.setUrl(url);
+                    pageResult.setCrawlJob(crawlJob);
 
                     for(String link: pageResult.getOutboundLinks()){
                         if(!visited.containsKey(link) && isSameDomain(link, url)){
