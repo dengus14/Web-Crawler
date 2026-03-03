@@ -1,7 +1,10 @@
 package model;
 
+import lombok.Data;
+
 import java.util.List;
 
+@Data
 public class CrawlJob {
     private String id;
     private String seedUrl;
