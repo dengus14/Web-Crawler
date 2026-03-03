@@ -15,6 +15,7 @@ import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.*;
 
 import static utils.Status.RUNNING;
 
@@ -60,8 +61,9 @@ public class CrawlerService {
     }
 
     public void crawl(CrawlJob crawlJob) throws IOException, InterruptedException, URISyntaxException {
-        Queue<String> queue = new LinkedList<>();
-        HashMap<String, Boolean> visited = new HashMap();
+        Queue<String> queue = new ConcurrentLinkedQueue<>();
+        ConcurrentHashMap<String, Boolean> visited = new ConcurrentHashMap<>();
+        ExecutorService executor = Executors.newFixedThreadPool(10);
         crawlJob.setStatus("RUNNING");
 
         queue.add(crawlJob.getSeedUrl());
@@ -73,28 +75,39 @@ public class CrawlerService {
             }
             visited.put(url, true);
 
-            try{
-                long startTime = System.currentTimeMillis();
-                HttpResponse<String> response = fetchUrl(url);
-                long endTime = System.currentTimeMillis();
-                long duration = endTime - startTime;
+            executor.execute(() -> {
+                try{
+                    long startTime = System.currentTimeMillis();
+                    HttpResponse<String> response = fetchUrl(url);
+                    long endTime = System.currentTimeMillis();
+                    long duration = endTime - startTime;
 
-                PageResult pageResult = parsePage(response.body(), url);
-                pageResult.setStatusCode(response.statusCode());
-                pageResult.setResponseTimeMs(duration);
-                pageResult.setUrl(url);
+                    PageResult pageResult = parsePage(response.body(), url);
+                    pageResult.setStatusCode(response.statusCode());
+                    pageResult.setResponseTimeMs(duration);
+                    pageResult.setUrl(url);
 
-                for(String link: pageResult.getOutboundLinks()){
-                    if(!visited.containsKey(link) && isSameDomain(link, url)){
-                        queue.add(link);
+                    for(String link: pageResult.getOutboundLinks()){
+                        if(!visited.containsKey(link) && isSameDomain(link, url)){
+                            queue.add(link);
+                        }
                     }
+                    crawlJob.getResults().add(pageResult);
+                    crawlJob.setPagesCrawled(crawlJob.getPagesCrawled() + 1);
+                }catch (Exception e){
+                    log.error("Crawling error", e);
                 }
-                crawlJob.getResults().add(pageResult);
-                crawlJob.setPagesCrawled(crawlJob.getPagesCrawled() + 1);
-            }catch (Exception e){
-                log.error("Crawling error", e);
-            }
+            });
 
+
+        }
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(10, TimeUnit.MINUTES)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
         }
         crawlJob.setStatus("DONE");
     }
