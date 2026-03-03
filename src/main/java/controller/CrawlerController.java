@@ -2,6 +2,7 @@ package controller;
 
 
 import model.CrawlJob;
+import model.ReportResponseClass;
 import model.ResponseClass;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +42,26 @@ public class CrawlerController {
         responseClass.setPagesCrawled(crawlJob.getPagesCrawled());
         return responseClass;
     }
+
+    @GetMapping("/api/crawl/{id}/report")
+    public ReportResponseClass getCrawlReport(@PathVariable String id) {
+        CrawlJob crawlJob = crawlerRepository.findById(id).orElse(null);
+
+        if (crawlJob == null) {
+            return new ReportResponseClass();
+        }
+
+        ReportResponseClass responseClass = new ReportResponseClass();
+        responseClass.setBrokenLinks(analysisService.getBrokenLinks(crawlJob));
+        responseClass.setSeoIssues(analysisService.findSeoIssues(crawlJob));
+        responseClass.setDuplicatePages(analysisService.findDuplicatePages(crawlJob));
+        responseClass.setSlowPages(analysisService.getSlowPages(crawlJob));
+
+        return responseClass;
+
+    }
+
+
 
 
 }
