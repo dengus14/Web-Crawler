@@ -12,8 +12,6 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.*;
 
@@ -64,17 +62,18 @@ public class CrawlerService {
         Queue<String> queue = new ConcurrentLinkedQueue<>();
         ConcurrentHashMap<String, Boolean> visited = new ConcurrentHashMap<>();
         ExecutorService executor = Executors.newFixedThreadPool(10);
+        Phaser phaser = new Phaser(1);
         crawlJob.setStatus("RUNNING");
 
         queue.add(crawlJob.getSeedUrl());
 
-        while (!queue.isEmpty() && crawlJob.getPagesCrawled() != 500){
+        while (!queue.isEmpty() && crawlJob.getPagesCrawled() < crawlJob.getMaxPages()){
             String url = queue.poll();
             if (visited.containsKey(url)){
                 continue;
             }
             visited.put(url, true);
-
+            phaser.register();
             executor.execute(() -> {
                 try{
                     long startTime = System.currentTimeMillis();
@@ -96,11 +95,12 @@ public class CrawlerService {
                     crawlJob.setPagesCrawled(crawlJob.getPagesCrawled() + 1);
                 }catch (Exception e){
                     log.error("Crawling error", e);
+                }finally {
+                    phaser.arriveAndDeregister();
                 }
             });
-
-
         }
+        phaser.arriveAndAwaitAdvance();
         executor.shutdown();
         try {
             if (!executor.awaitTermination(10, TimeUnit.MINUTES)) {

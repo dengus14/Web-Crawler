@@ -11,5 +11,6 @@ public class CrawlJob {
     private String seedUrl;
     private String status; // PENDING, RUNNING, DONE - are in Status.java
     private int pagesCrawled;
+    private int maxPages = 500;
     private CopyOnWriteArrayList<PageResult> results;
 }
