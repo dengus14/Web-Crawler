@@ -20,6 +20,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,6 +54,7 @@ public class CrawlerService {
         HttpResponse<String> response;
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(30)) //GUARD RAIL FOR REQUEST TIMEOUTS, THREAD COULD WAIT FOREVER WITHOUT IT
                 .GET()
                 .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .build();
