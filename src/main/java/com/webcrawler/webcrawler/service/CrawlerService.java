@@ -21,9 +21,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -73,7 +75,9 @@ public class CrawlerService {
         if (doc.select("h1").size() > 0){
             pageResult.setHasH1(true);
         }
-        pageResult.setOutboundLinks(doc.select("a[href]").eachAttr("abs:href"));
+
+        List<String> allLinks = doc.select("a[href]").eachAttr("abs:href");
+        pageResult.setOutboundLinks(allLinks.stream().limit(5).collect(Collectors.toList()));
 
         return pageResult;
     }
@@ -91,6 +95,29 @@ public class CrawlerService {
         host2 = host2.replaceAll("^www\\.", "");
         return host.equals(host2);
     }
+
+    private boolean isHtmlUrl(String url) {
+        String lowerUrl = url.toLowerCase();
+
+        // Blacklist of non-HTML file extensions to skip before making HTTP requests
+        String[] nonHtmlExtensions = {
+            ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".ico",
+            ".mp4", ".avi", ".mov", ".mkv", ".webm",
+            ".mp3", ".wav", ".ogg",
+            ".zip", ".tar", ".gz", ".rar", ".7z",
+            ".css", ".js", ".woff", ".woff2", ".ttf",
+            ".xml", ".json", ".txt",
+            ".exe", ".dmg", ".deb", ".rpm"
+        };
+
+        for (String ext : nonHtmlExtensions) {
+            if (lowerUrl.endsWith(ext)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Async
     public void crawl(CrawlJob crawlJob) {
         log.info("Crawl started for job: {}", crawlJob.getId());
@@ -140,9 +167,11 @@ public class CrawlerService {
                         log.info("Parsed page: {}, found {} links", url, pageResult.getOutboundLinks().size());
 
                         for (String link : pageResult.getOutboundLinks()) {
-                            if (!visited.containsKey(link) && isSameDomain(link, url)) {
+                            if (!visited.containsKey(link) && isSameDomain(link, url) && isHtmlUrl(link)) {
                                 queue.add(link);
                                 log.info("Enqueuing link: {}", link);
+                            } else if (!isHtmlUrl(link)) {
+                                log.debug("Skipping non-HTML: {}", link);
                             }
                         }
                         crawlJob.getResults().add(pageResult);

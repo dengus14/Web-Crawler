@@ -20,6 +20,12 @@ public class AnalysisService {
     public List<PageResult> getSlowPages(CrawlJob job){
 
         int k = job.getResults().size() / 10;
+
+        // If less than 10 pages, return empty list (need at least 10 pages for top 10% calculation)
+        if (k == 0) {
+            return new ArrayList<>();
+        }
+
         PriorityQueue<PageResult> minHeap = new PriorityQueue<>(k,
                 Comparator.comparingLong(PageResult::getResponseTimeMs));
 
