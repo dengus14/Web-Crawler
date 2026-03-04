@@ -103,8 +103,9 @@ public class CrawlerService {
             queue.add(crawlJob.getSeedUrl());
             log.info("Seed URL added: {}", crawlJob.getSeedUrl());
             AtomicInteger activeThreads = new AtomicInteger(0);
-            while (crawlJob.getPagesCrawled() < crawlJob.getMaxPages() &&
-                    (!queue.isEmpty() || activeThreads.get() > 0)) {
+            AtomicInteger pagesCrawled = new AtomicInteger(0);
+
+            while (!queue.isEmpty() || activeThreads.get() > 0) {
                 if (queue.isEmpty() && activeThreads.get() > 0) {
                     Thread.sleep(50);
                     continue;
@@ -114,6 +115,11 @@ public class CrawlerService {
                 if (url == null || visited.containsKey(url)) {
                     continue;
                 }
+
+                if (pagesCrawled.incrementAndGet() > crawlJob.getMaxPages()) {
+                    break;
+                }
+
                 visited.put(url, true);
                 phaser.register();
                 activeThreads.incrementAndGet();
@@ -138,7 +144,7 @@ public class CrawlerService {
                             }
                         }
                         crawlJob.getResults().add(pageResult);
-                        crawlJob.setPagesCrawled(crawlJob.getPagesCrawled() + 1);
+                        crawlJob.setPagesCrawled(pagesCrawled.get());
                     } catch (Exception e) {
                         log.error("Crawling error", e);
                     } finally {
@@ -157,6 +163,7 @@ public class CrawlerService {
                 executor.shutdownNow();
             }
             crawlJob.setStatus("DONE");
+            crawlJob.setPagesCrawled(pagesCrawled.get());
             crawlerRepository.save(crawlJob);
         } catch (Exception e) {
             log.error("Crawl failed", e);
