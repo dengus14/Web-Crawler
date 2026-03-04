@@ -1,4 +1,4 @@
-package model;
+package com.webcrawler.webcrawler.model;
 
 import jakarta.persistence.*;
 import lombok.Data;

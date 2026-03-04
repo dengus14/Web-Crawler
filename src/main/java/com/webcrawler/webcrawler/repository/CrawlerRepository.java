@@ -1,6 +1,6 @@
-package repository;
+package com.webcrawler.webcrawler.repository;
 
-import model.CrawlJob;
+import com.webcrawler.webcrawler.model.CrawlJob;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

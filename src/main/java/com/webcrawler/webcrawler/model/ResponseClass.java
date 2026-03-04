@@ -1,4 +1,4 @@
-package model;
+package com.webcrawler.webcrawler.model;
 
 
 import lombok.Data;

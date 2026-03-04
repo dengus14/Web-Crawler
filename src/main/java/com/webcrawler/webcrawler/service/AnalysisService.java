@@ -1,7 +1,7 @@
-package service;
+package com.webcrawler.webcrawler.service;
 
-import model.CrawlJob;
-import model.PageResult;
+import com.webcrawler.webcrawler.model.CrawlJob;
+import com.webcrawler.webcrawler.model.PageResult;
 import org.springframework.stereotype.Service;
 
 import java.util.*;

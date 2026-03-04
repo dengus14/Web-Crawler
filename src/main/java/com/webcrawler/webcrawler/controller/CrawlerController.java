@@ -1,26 +1,25 @@
-package controller;
+package com.webcrawler.webcrawler.controller;
 
 
-import model.CrawlJob;
-import model.ReportResponseClass;
-import model.ResponseClass;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import repository.CrawlerRepository;
-import service.AnalysisService;
-import service.CrawlerService;
+import com.webcrawler.webcrawler.model.CrawlJob;
+import com.webcrawler.webcrawler.model.ReportResponseClass;
+import com.webcrawler.webcrawler.model.ResponseClass;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import com.webcrawler.webcrawler.repository.CrawlerRepository;
+import com.webcrawler.webcrawler.service.AnalysisService;
+import com.webcrawler.webcrawler.service.CrawlerService;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-@Controller
-
+@RestController
 public class CrawlerController {
+    @Autowired
     private AnalysisService analysisService;
+    @Autowired
     private CrawlerService crawlerService;
+    @Autowired
     private CrawlerRepository crawlerRepository;
 
     @PostMapping("/api/crawl")
