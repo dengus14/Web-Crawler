@@ -2,6 +2,7 @@ package com.webcrawler.webcrawler.controller;
 
 
 import com.webcrawler.webcrawler.model.CrawlJob;
+import com.webcrawler.webcrawler.model.GraphResponse;
 import com.webcrawler.webcrawler.model.ReportResponseClass;
 import com.webcrawler.webcrawler.model.ResponseClass;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import com.webcrawler.webcrawler.repository.CrawlerRepository;
 import com.webcrawler.webcrawler.service.AnalysisService;
 import com.webcrawler.webcrawler.service.CrawlerService;
+import com.webcrawler.webcrawler.service.GraphService;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -21,6 +23,8 @@ public class CrawlerController {
     private CrawlerService crawlerService;
     @Autowired
     private CrawlerRepository crawlerRepository;
+    @Autowired
+    private GraphService graphService;
 
     @PostMapping("/api/crawl")
     public String startCrawlJob(@RequestParam String url) throws IOException, URISyntaxException, InterruptedException {
@@ -58,6 +62,17 @@ public class CrawlerController {
 
         return responseClass;
 
+    }
+
+    @GetMapping("/api/crawl/{id}/graph")
+    public GraphResponse getCrawlGraph(@PathVariable String id) {
+        CrawlJob crawlJob = crawlerRepository.findById(id).orElse(null);
+
+        if (crawlJob == null) {
+            return new GraphResponse();
+        }
+
+        return graphService.buildGraph(crawlJob);
     }
 
 
