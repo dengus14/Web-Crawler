@@ -33,6 +33,10 @@ public class CrawlerService {
     HttpClient client = createHttpClient();
     @Autowired
     private CrawlerRepository crawlerRepository;
+    @Autowired
+    private RobotsTxtService robotsTxtService;
+    @Autowired
+    private RateLimiter rateLimiter;
 
     private HttpClient createHttpClient() {
         try {
@@ -154,6 +158,8 @@ public class CrawlerService {
                 activeThreads.incrementAndGet();
                 executor.execute(() -> {
                     try {
+                        rateLimiter.waitIfNeeded(url);
+
                         long startTime = System.currentTimeMillis();
                         HttpResponse<String> response = fetchUrl(url);
                         long endTime = System.currentTimeMillis();
@@ -167,11 +173,13 @@ public class CrawlerService {
                         log.info("Parsed page: {}, found {} links", url, pageResult.getOutboundLinks().size());
 
                         for (String link : pageResult.getOutboundLinks()) {
-                            if (!visited.containsKey(link) && isSameDomain(link, url) && isHtmlUrl(link)) {
+                            if (!visited.containsKey(link) && isSameDomain(link, url) && isHtmlUrl(link) && robotsTxtService.isAllowed(link)) {
                                 queue.add(link);
                                 log.info("Enqueuing link: {}", link);
                             } else if (!isHtmlUrl(link)) {
                                 log.debug("Skipping non-HTML: {}", link);
+                            } else if (!robotsTxtService.isAllowed(link)) {
+                                log.debug("Skipping URL (robots.txt): {}", link);
                             }
                         }
                         crawlJob.getResults().add(pageResult);
