@@ -56,7 +56,7 @@ function NetworkBackground() {
 
     // Draw connections between nearby particles
     const drawConnections = () => {
-      const maxDistance = 150;
+      const maxDistance = 350;
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
