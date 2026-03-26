@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Read(//c/Users/ddgus/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/ui-ux-pro-max/**)",
+      "Bash(python3 scripts/search.py \"web crawler technical dashboard developer tool data visualization\" --design-system -p \"WebCrawler\" -f markdown)",
+      "Bash(python scripts/search.py \"web crawler technical dashboard developer tool data visualization\" --design-system -p \"WebCrawler\" -f markdown)",
+      "Bash(python cli/assets/scripts/search.py \"web crawler technical dashboard developer tool data visualization\" --design-system -p \"WebCrawler\" -f markdown)",
+      "Bash(python cli/assets/scripts/search.py \"developer tool analytics dashboard monochrome\" --domain color -n 3)",
+      "Bash(python cli/assets/scripts/search.py \"technical data analysis navigation patterns\" --domain ux -n 5)",
+      "Bash(find C:UsersddgusOneDriveDesktopWeb-Crawlerfrontendsrc -type f \\\\\\(-name *.jsx -o -name *.js -o -name *.css \\\\\\))",
+      "Bash(cd:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :5173)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /PID 106432 /F\")",
+      "Bash(cmd /c \"taskkill /PID 106432 /F 2>&1\")",
+      "Bash(cmd /c \"taskkill /IM node.exe /F 2>&1\")"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import NetworkBackground from '../components/NetworkBackground';
-import StatusCard from '../components/StatusCard';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import StatusBadge from '../components/StatusBadge';
+import StatCard from '../components/StatCard';
 import { getCrawlStatus } from '../services/api';
 
 function StatusPage() {
@@ -10,7 +10,23 @@ function StatusPage() {
   const [status, setStatus] = useState('PENDING');
   const [pagesCrawled, setPagesCrawled] = useState(0);
   const [error, setError] = useState(null);
+  const [elapsed, setElapsed] = useState(0);
+  const startTimeRef = useRef(Date.now());
+  const doneRef = useRef(false);
 
+  const seedUrl = localStorage.getItem(`crawl-url-${id}`) ?? id;
+
+  // Elapsed timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!doneRef.current) {
+        setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Polling
   useEffect(() => {
     let pollInterval;
 
@@ -20,116 +36,158 @@ function StatusPage() {
         setStatus(response.status);
         setPagesCrawled(response.pagesCrawled);
 
-        // If completed, redirect after delay
         if (response.status === 'DONE' || response.status === 'COMPLETED') {
-          setTimeout(() => {
-            navigate(`/graph/${id}`);
-          }, 1500);
+          doneRef.current = true;
+          clearInterval(pollInterval);
+          setTimeout(() => navigate(`/report/${id}`), 800);
         }
 
-        // If failed, stop polling
         if (response.status === 'FAILED') {
+          doneRef.current = true;
           clearInterval(pollInterval);
         }
       } catch (err) {
-        console.error('Error fetching status:', err);
         setError(err.response?.data?.message || err.message || 'Failed to fetch crawl status');
         clearInterval(pollInterval);
       }
     };
 
-    // Initial fetch
     fetchStatus();
-
-    // Poll every 2 seconds
     pollInterval = setInterval(fetchStatus, 2000);
-
-    // Cleanup on unmount
-    return () => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
-      }
-    };
+    return () => clearInterval(pollInterval);
   }, [id, navigate]);
 
-  const handleGoBack = () => {
-    navigate('/');
+  const formatElapsed = (s) => {
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s / 60)}m ${s % 60}s`;
   };
 
-  return (
-    <div className="relative min-h-screen overflow-hidden">
-      <NetworkBackground />
+  if (error) {
+    return (
+      <div
+        className="min-h-dvh flex flex-col items-center justify-center px-6"
+        style={{ paddingTop: '52px' }}
+      >
+        <div
+          className="w-full max-w-md rounded-lg p-5"
+          style={{ backgroundColor: '#1F0A0A', border: '1px solid #7F1D1D' }}
+        >
+          <div className="flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#F87171' }} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium mb-1" style={{ color: '#F87171' }}>Crawl error</p>
+              <p className="text-xs" style={{ color: '#FCA5A5' }}>{error}</p>
+            </div>
+          </div>
+        </div>
+        <Link
+          to="/"
+          className="mt-4 text-sm transition-colors"
+          style={{ color: '#64748B' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = '#94A3B8')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+        >
+          ← Start new crawl
+        </Link>
+      </div>
+    );
+  }
 
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6">
-        {/* Title */}
-        <div className="text-center mb-12">
-          <h1
-            className="text-5xl md:text-6xl font-bold mb-2 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent"
-            style={{
-              fontFamily: '"Space Grotesk", monospace',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Crawl Status
-          </h1>
-          <p
-            className="text-gray-500 text-sm mt-2"
-            style={{
-              fontFamily: '"Space Grotesk", "Inter", sans-serif',
-            }}
-          >
-            Job ID: {id}
-          </p>
+  const isDone = status === 'DONE' || status === 'COMPLETED';
+  const isFailed = status === 'FAILED';
+
+  return (
+    <div
+      className="min-h-dvh px-6 py-10"
+      style={{ paddingTop: 'calc(52px + 2.5rem)' }}
+    >
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <StatusBadge status={status} />
+            </div>
+            <p
+              className="text-xs font-mono mt-2 max-w-sm truncate"
+              style={{ color: '#64748B' }}
+              title={seedUrl}
+            >
+              {seedUrl}
+            </p>
+          </div>
         </div>
 
-        {/* Status Card or Error */}
-        {error ? (
-          <div className="text-center max-w-md">
-            <div className="mb-6 p-6 bg-red-900/30 border border-red-500/50 rounded-lg backdrop-blur-sm">
-              <div className="flex items-start gap-3 mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-red-400 flex-shrink-0"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <div className="text-left">
-                  <h3 className="text-red-300 font-semibold mb-1">Error</h3>
-                  <p className="text-red-300/80 text-sm">{error}</p>
-                </div>
-              </div>
+        {/* Stat cards */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          <StatCard
+            label="Pages crawled"
+            value={pagesCrawled}
+            valueColor="#F1F5F9"
+          />
+          <StatCard
+            label="Elapsed"
+            value={formatElapsed(elapsed)}
+            valueColor="#94A3B8"
+          />
+          <StatCard
+            label="Max pages"
+            value="500"
+            valueColor="#475569"
+            sublabel="per job"
+          />
+        </div>
+
+        {/* CTA when done */}
+        {isDone && (
+          <div
+            className="rounded-lg p-4 flex items-center justify-between"
+            style={{ backgroundColor: '#052E16', border: '1px solid #14532D' }}
+          >
+            <div className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" style={{ color: '#4ADE80' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm" style={{ color: '#4ADE80' }}>
+                Crawl complete — redirecting to report...
+              </span>
             </div>
-            <button
-              onClick={handleGoBack}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300"
-              style={{
-                fontFamily: '"Space Grotesk", "Inter", sans-serif',
-              }}
+            <Link
+              to={`/report/${id}`}
+              className="text-xs font-medium px-3 py-1.5 rounded transition-colors"
+              style={{ backgroundColor: '#22C55E', color: '#052E16' }}
             >
-              Go Back
-            </button>
+              View report →
+            </Link>
           </div>
-        ) : status === 'FAILED' ? (
-          <div className="text-center max-w-md">
-            <StatusCard status={status} pagesCrawled={pagesCrawled} />
-            <button
-              onClick={handleGoBack}
-              className="mt-8 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300"
-              style={{
-                fontFamily: '"Space Grotesk", "Inter", sans-serif',
-              }}
+        )}
+
+        {/* Failed state */}
+        {isFailed && (
+          <div
+            className="rounded-lg p-4 flex items-center justify-between"
+            style={{ backgroundColor: '#1F0A0A', border: '1px solid #7F1D1D' }}
+          >
+            <span className="text-sm" style={{ color: '#F87171' }}>
+              Crawl failed. The target may be unreachable.
+            </span>
+            <Link
+              to="/"
+              className="text-xs font-medium px-3 py-1.5 rounded"
+              style={{ backgroundColor: '#EF4444', color: '#fff' }}
             >
-              Go Back
-            </button>
+              Try again
+            </Link>
           </div>
-        ) : (
-          <StatusCard status={status} pagesCrawled={pagesCrawled} />
+        )}
+
+        {/* Running hint */}
+        {!isDone && !isFailed && (
+          <p className="text-xs text-center" style={{ color: '#475569' }}>
+            Crawling in progress — this page polls automatically every 2s
+          </p>
         )}
       </div>
     </div>
